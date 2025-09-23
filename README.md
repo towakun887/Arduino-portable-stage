@@ -1,5 +1,21 @@
 # Arduino卓上ライブステージ
+電子工作(25春)中間制作及びその発展としての最終制作
+
+最終制作提出レポートより抜粋
+### 3. 作品概要
+卓上ライブステージ。1 個ずつに切り離した NeoPixel LED 4 個に対してサーボモーターを各 2 個ずつ取り付け，2 軸可動のステージライト 4 個とした上で，Arduino UNO R4 (WiFi)に接続したもの。  
+フラッシュメモリ内に書き込まれた独⾃規格である 1 フレームあたり 8進数 21 桁のライティング指⽰と，同サイズの運動指⽰のデータを毎フレームごとに解釈し，LED テープとサーボモーターへ反映する。  
+USB-C 経由でスマートフォンと接続し，スマートフォン側で動画を開いた状態でArduino 側のスイッチを押すと，動画の再⽣及びステージライト動作の再⽣が開始される。  
+ステージライトの再⽣が終了すると，数フレーム後に動画が⾃動で再⽣停⽌する。  
+筐体は樹脂製の組み⽴て式で，解体すると嵩張らなくなる。中間制作のアップデート品。  
+  
+中間制作提出レポートより抜粋  
+### 3. 作品概要
+4 個の LED がついた NeoPixel LED テープを，ライブステージのライトとして⽤いたArduino Uno R4 (WiFi)作品。  
+フラッシュメモリ内に書き込まれた 1 フレームあたり 8 進数21 桁のライティング指⽰を毎フレームごとに解釈し，LED テープへ反映する。  
+USB-C 経由でスマートフォンと接続し，スマートフォン側で動画を開いた状態で Arduino 側のスイッチを押すと，動画の再⽣及びライティングの再⽣が開始される。  
+ライティングは⾃動で終了するが，動画は⼿動で再⽣停⽌する必要がある。  
+
 https://web.sfc.keio.ac.jp/~t24789tm/utils/#Arduino-portable-stage
-<div>
-  <iframe id="youtube-embed" width="400" height="250" src="https://www.youtube.com/embed/DXe0JBAQ8Vc" title="電子工作 最終制作「ライブステージ改/きゅーぴっど。」" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></p><br><hr>
-</div>
+## デモ動画 (YouTube)
+[!(https://i.ytimg.com/vi_webp/DXe0JBAQ8Vc/sddefault.webp)](https://youtu.be/DXe0JBAQ8Vc?si=kuB1D2xVa5uy_Kra)
