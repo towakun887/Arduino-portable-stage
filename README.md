@@ -1,4 +1,12 @@
-# Arduino卓上ライブステージ
+# Arduino卓上ライブステージ with Hololens 2
+[mainブランチのArduino卓上ライブステージ](https://github.com/towakun887/Arduino-portable-stage/tree/main)を、Hololens2によるARアプリケーションと連動させたもの。  
+Hololens2上で、オブジェクトをステージに降ろすと、再生が始まる。ステージの周囲にはARオブジェクトが表示される。  
+
+## デモ動画 (youtube)
+[https://youtu.be/3Diwrs3YfBw?si=--2vxwpaEu3IeS5x](https://youtu.be/3Diwrs3YfBw?si=--2vxwpaEu3IeS5x)
+[![](https://i.ytimg.com/vi_webp/3Diwrs3YfBw/sddefault.webp)](https://youtu.be/3Diwrs3YfBw?si=--2vxwpaEu3IeS5x)
+
+# 以下は、mainブランチのreadme.md
 電子工作(25春)中間制作及びその発展としての最終制作  を、さらに改修したもの
 
 ## 概要
