@@ -5,6 +5,13 @@
 #include <Adafruit_PWMServoDriver.h>
 #include <Servo.h>
 // #include <Arduino_FreeRTOS.h>
+#include "WiFiS3.h"
+
+//--Network Decleartion--//
+char ssid[] = "SSID";
+char pass[] = "PASS";
+int status = WL_IDLE_STATUS;
+WiFiServer server(80);
 
 //--Hardware Decleartion--//
 #define BUTTON_PIN 8
@@ -1551,6 +1558,56 @@ void bitServo() {  // the half of this made by Gemini
   initServo(-1);
 }
 
+void bootdownAnimation(bool isbooting){
+  if (isbooting) {
+    //servo
+    initServo(-1);
+    //light animation
+    strip.setPixelColor(ledIndex[1], strip.Color(holoColors[7].r, holoColors[7].g, holoColors[7].b));
+    initLight(1);
+    delay(500);
+    strip.setPixelColor(ledIndex[2], strip.Color(holoColors[2].r, holoColors[2].g, holoColors[2].b));
+    initLight(2);
+    delay(500);
+    strip.setPixelColor(ledIndex[0], strip.Color(holoColors[10].r, holoColors[10].g, holoColors[10].b));
+    initLight(0);
+    delay(500);
+    strip.setPixelColor(ledIndex[3], strip.Color(holoColors[3].r, holoColors[3].g, holoColors[3].b));
+    initLight(3);
+    delay(500);
+    bitServo();
+    delay(500);
+    for (int i = 0; i < LED_COUNT; i++) {
+      strip.setPixelColor(ledIndex[i], strip.Color(255, 255, 255));
+    }
+    strip.show();
+    delay(500);
+    initLight(-1);
+  } else {
+    //light animation
+    for (int i = 0; i < LED_COUNT; i++) {
+      strip.setPixelColor(ledIndex[i], strip.Color(255, 255, 255));
+    }
+    strip.show();
+    delay(500);
+    strip.setPixelColor(ledIndex[3], strip.Color(holoColors[3].r, holoColors[3].g, holoColors[3].b));
+    initLight(3);
+    delay(500);
+    strip.setPixelColor(ledIndex[0], strip.Color(holoColors[10].r, holoColors[10].g, holoColors[10].b));
+    initLight(0);
+    delay(500);
+    strip.setPixelColor(ledIndex[2], strip.Color(holoColors[2].r, holoColors[2].g, holoColors[2].b));
+    initLight(2);
+    delay(500);
+    strip.setPixelColor(ledIndex[1], strip.Color(holoColors[7].r, holoColors[7].g, holoColors[7].b));
+    initLight(1);
+    delay(500);
+    initLight(-1);
+    //servo
+    foldServo();
+  }
+}
+
 int convSvData(int svdata) {
   if (svdata == 040) return 90;
   //currently, simply +58
@@ -1560,6 +1617,19 @@ int convSvData(int svdata) {
 void send_key(uint16_t key) {
   ConsumerKeyboard.press(key);
   ConsumerKeyboard.release();
+}
+
+// Wi-Fiの接続情報を表示する関数
+void printWifiStatus() {
+  Serial.println("----------------------------------------");
+  Serial.print("Connected to SSID: ");
+  Serial.println(WiFi.SSID());
+
+  // ルーターから割り当てられたIPアドレスを表示
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
+  Serial.println("----------------------------------------");
 }
 
 //--System Process Declaration--//
@@ -1583,6 +1653,25 @@ bool buttonIsCurrentlyPressed = false;
 const long longPressThreshold = 1000;
 const long debounceDelay = 50;
 
+void startPlayStaging(){
+  //normal: start to play
+  digitalWrite(13, LOW);
+  inPlaying = true;
+  frame = 0;
+  delay(200);
+  // Keyboard.write(' ');
+  send_key(KEY_SCAN_PREVIOUS);
+  delay(200);
+  start = micros();
+  send_key(KEY_PLAY_PAUSE);
+  // Serial.println(micros() - s);
+  // delayMicroseconds(500);
+  delay(PLAY_DELAY);
+  // Serial.println("start:"+String(micros()));
+  Serial.println("start:" + String(millis()));
+  // start = micros();
+  next_frame_us = micros();
+}
 
 //--Setup--//
 
@@ -1591,6 +1680,7 @@ void setup() {
   Keyboard.begin();
   strip.begin();
 
+  //hardware init
   pinMode(13, OUTPUT);
   pinMode(8, INPUT_PULLUP);
   digitalWrite(13, HIGH);
@@ -1603,6 +1693,16 @@ void setup() {
   foldServo();
 
   servo_grad_fs = GRAD_FRAME / SERVO_GRAD_INT;
+
+  //network init
+  while (status != WL_CONNECTED) {
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(ssid);
+    status = WiFi.begin(ssid, pass);
+    delay(2500); 
+  }
+  server.begin();
+  printWifiStatus();
 }
 
 //--Process--//
@@ -1824,6 +1924,7 @@ void loop() {
       }
     }
   } else {
+    WiFiClient client = server.available();
 
     //button process by Gemini
     if (sensorVal1 == LOW && !buttonIsCurrentlyPressed) {
@@ -1841,77 +1942,99 @@ void loop() {
       } else if (pressDuration >= longPressThreshold) {
         //long press: system boot
         if (!isSystemBooted) {
-          //servo
-          initServo(-1);
-          //light animation
-          strip.setPixelColor(ledIndex[1], strip.Color(holoColors[7].r, holoColors[7].g, holoColors[7].b));
-          initLight(1);
-          delay(500);
-          strip.setPixelColor(ledIndex[2], strip.Color(holoColors[2].r, holoColors[2].g, holoColors[2].b));
-          initLight(2);
-          delay(500);
-          strip.setPixelColor(ledIndex[0], strip.Color(holoColors[10].r, holoColors[10].g, holoColors[10].b));
-          initLight(0);
-          delay(500);
-          strip.setPixelColor(ledIndex[3], strip.Color(holoColors[3].r, holoColors[3].g, holoColors[3].b));
-          initLight(3);
-          delay(500);
-          bitServo();
-          delay(500);
-          for (int i = 0; i < LED_COUNT; i++) {
-            strip.setPixelColor(ledIndex[i], strip.Color(255, 255, 255));
-          }
-          strip.show();
-          delay(500);
-          initLight(-1);
+          bootdownAnimation(true);
           isSystemBooted = true;
-        } else {
-          //light animation
-          for (int i = 0; i < LED_COUNT; i++) {
-            strip.setPixelColor(ledIndex[i], strip.Color(255, 255, 255));
-          }
-          strip.show();
-          delay(500);
-          strip.setPixelColor(ledIndex[3], strip.Color(holoColors[3].r, holoColors[3].g, holoColors[3].b));
-          initLight(3);
-          delay(500);
-          strip.setPixelColor(ledIndex[0], strip.Color(holoColors[10].r, holoColors[10].g, holoColors[10].b));
-          initLight(0);
-          delay(500);
-          strip.setPixelColor(ledIndex[2], strip.Color(holoColors[2].r, holoColors[2].g, holoColors[2].b));
-          initLight(2);
-          delay(500);
-          strip.setPixelColor(ledIndex[1], strip.Color(holoColors[7].r, holoColors[7].g, holoColors[7].b));
-          initLight(1);
-          delay(500);
-          initLight(-1);
-          //servo
-          foldServo();
+        }else{
+          bootdownAnimation(false);
           isSystemBooted = false;
         }
       } else {
-        //normal: playing
-        digitalWrite(13, LOW);
-        inPlaying = true;
-        frame = 0;
-        delay(200);
-        // Keyboard.write(' ');
-        send_key(KEY_SCAN_PREVIOUS);
-        delay(200);
-        start = micros();
-        send_key(KEY_PLAY_PAUSE);
-        // Serial.println(micros() - s);
-        // delayMicroseconds(500);
-        delay(PLAY_DELAY);
-        // Serial.println("start:"+String(micros()));
-        Serial.println("start:" + String(millis()));
-        // start = micros();
-        next_frame_us = micros();
+        //normal: start to play
+        startPlayStaging();
       }
     }
 
     if (sensorVal1 == HIGH && !buttonIsCurrentlyPressed) {
       delay(50);
+    }
+
+    if (client) {
+      String requestLine = "";
+      String requestBody = "";
+      boolean isPost = false;
+      boolean currentLineIsBlank = true;
+      boolean isBody = false;
+
+      while (client.connected()) {
+        //---Hardware loop code---//
+
+        //--hardware-end--//
+
+        if (client.available()) {
+          char c = client.read();
+          
+          // リクエストの最初の数文字を保存してGETかPOSTか判定
+          if (requestLine.length() < 10) {
+            requestLine += c;
+          }
+
+          // 改行コード(\n)が来て、かつその行が空行だった場合、ヘッダーの終了
+          if (c == '\n' && currentLineIsBlank) {
+            isBody = true;
+            if (requestLine.startsWith("POST")) {
+              isPost = true;
+            }
+          }
+
+          // 空行の判定ロジック
+          if (c == '\n') {
+            currentLineIsBlank = true;
+          } else if (c != '\r') {
+            currentLineIsBlank = false;
+          }
+
+          // ヘッダー終了後、POSTメソッドであればボディを読み取る
+          if (isBody && isPost && client.available()) {
+            while(client.available()) {
+              requestBody += (char)client.read();
+            }
+            
+            Serial.println("Received: " + requestBody);
+
+            // Unityからのデータに応じてスイッチを切り替え
+            if (requestBody.indexOf("PLAY") >= 0) {
+              /////
+              Serial.println("Play by ext");
+              delay(850);
+              startPlayStaging();
+            }/* else if (requestBody.indexOf("OFF") >= 0) {
+              digitalWrite(switchPin, LOW);
+              //////
+              Serial.println("-> Switch OFF");
+            }*/
+            
+            // Unityへレスポンスを返す
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-Type: text/plain");
+            client.println("Connection: close");
+            client.println();
+            client.println("Arduino R4: Command Received");
+            break;
+          }
+          
+          // POST以外（ブラウザからのアクセスなど）への対応
+          if (isBody && !isPost) {
+              client.println("HTTP/1.1 200 OK");
+              client.println("Content-Type: text/html");
+              client.println("Connection: close");
+              client.println();
+              client.println("<html><body><h1>Arduino UNO R4 WiFi Server is Running</h1></body></html>");
+              break;
+          }
+        }
+      }
+      delay(1);
+      client.stop();
     }
   }
 }
