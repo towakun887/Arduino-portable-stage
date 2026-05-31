@@ -1471,6 +1471,63 @@ const uint64_t servo_frame_data[] PROGMEM = {
 };
 #define ACTUAL_SIZE_OF_SERVO_DATA 677
 
+const uint64_t light_frame_demo_data[] PROGMEM = {
+    000077300002ULL,
+    0,
+    000000101772ULL,
+    0,
+    010000204772ULL,
+    0,
+    020000307772ULL,
+    0
+};
+#define SIZE_OF_DEMO 8
+const uint64_t light_frame_demo_two_data[] PROGMEM = {
+    000277300002ULL,
+    00ULL,
+    00ULL,
+    00ULL,
+    000000102772ULL,
+    00ULL,
+    00ULL,
+    00ULL,
+    010000202772ULL,
+    00ULL,
+    00ULL,
+    00ULL,
+    020000302772ULL,
+    00ULL,
+    00ULL,
+    00ULL
+};
+#define SIZE_OF_DEMO_TWO 16
+const uint64_t light_frame_demo_three_data[] PROGMEM = {
+    001177300002ULL,
+    00ULL,
+    00ULL,
+    00ULL,
+    000000111772ULL,
+    00ULL,
+    00ULL,
+    00ULL,
+    010000210772ULL,
+    00ULL,
+    00ULL,
+    00ULL,
+    020000310772ULL,
+    00ULL,
+    00ULL,
+    00ULL
+};
+#define SIZE_OF_DEMO_THREE 16
+#define DEMO_BPM 92
+#define DEMO_THREE_BPM 143
+#define DEMO_PER_BEAT 8
+#define DEMO_FRAME_DENOMI (DEMO_BPM * DEMO_PER_BEAT)
+#define DEMO_THREE_FRAME_DENOMI (DEMO_THREE_BPM * DEMO_PER_BEAT)
+bool in_two_demo = false;
+bool in_three_demo = false;
+short demo_frame = 0;
 //--System Basic Declaration--//
 
 bool isSystemBooted = false;  //boot (light maintenance mode)
@@ -1479,8 +1536,10 @@ bool isSystemBooted = false;  //boot (light maintenance mode)
 #define ENDFRAME 675
 
 //config
-#define FRAME_RATE 46875  //per us
-// #define FRAME_RATE 47  //per ms
+// #define FRAME_RATE 46875  //per us
+#define BPM 160
+#define PER_BEAT 8
+#define FRAME_DENOMI (BPM * PER_BEAT)
 // #define GRAD_FRAME 80  //per frame
 #define GRAD_FRAME 60     //per frame
 #define SERVO_GRAD_INT 2  //for each grad frame
@@ -1592,7 +1651,10 @@ void setup() {
   strip.begin();
 
   pinMode(13, OUTPUT);
-  pinMode(8, INPUT_PULLUP);
+  pinMode(8, INPUT_PULLUP);//button
+  pinMode(7, INPUT_PULLUP);//demo_jump
+  pinMode(2, INPUT_PULLUP);//demo_two_143_jump
+  pinMode(4, INPUT_PULLUP);//demo_two_jump
   digitalWrite(13, HIGH);
 
   initLight(-1);
@@ -1638,6 +1700,27 @@ void loop() {
           }
           if (frame >= ACTUAL_SIZE_OF_SERVO_DATA) {
             servoOrder = 00ULL;
+          }
+          if(digitalRead(7) == LOW){
+            if(demo_frame > SIZE_OF_DEMO) demo_frame = 0;
+            lightOrder = light_frame_demo_data[demo_frame];
+            servoOrder = 00ULL;
+            demo_frame++;
+          }else if(digitalRead(4) == LOW){
+            in_two_demo = true;
+            if(demo_frame > SIZE_OF_DEMO_TWO) demo_frame = 0;
+            lightOrder = light_frame_demo_two_data[demo_frame];
+            servoOrder = 00ULL;
+            demo_frame++;
+          }else if(digitalRead(2) == LOW){
+            in_three_demo = true;
+            if(demo_frame > SIZE_OF_DEMO_THREE) demo_frame = 0;
+            lightOrder = light_frame_demo_three_data[demo_frame];
+            servoOrder = 00ULL;
+            demo_frame++;
+          }else if(in_two_demo || in_three_demo){
+            in_two_demo = false;
+            in_three_demo = false;
           }
           uint8_t pat = lightOrder & 07;
           uint8_t svpat = servoOrder & 07;
@@ -1814,7 +1897,14 @@ void loop() {
             }
           }
           frame++;
-          next_frame_us += FRAME_RATE;
+          // next_frame_us += FRAME_RATE;
+          int denomi = FRAME_DENOMI;
+          if(in_two_demo){
+            denomi = DEMO_FRAME_DENOMI;
+          }else if(in_three_demo){
+            denomi = DEMO_THREE_FRAME_DENOMI;
+          }
+          next_frame_us = start + ((60000000ULL * frame) / denomi);
         }
       } else {
         send_key(KEY_PLAY_PAUSE);
@@ -1906,7 +1996,8 @@ void loop() {
         // Serial.println("start:"+String(micros()));
         Serial.println("start:" + String(millis()));
         // start = micros();
-        next_frame_us = micros();
+        start = micros();
+        next_frame_us = start;
       }
     }
 
